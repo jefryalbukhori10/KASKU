@@ -13,14 +13,27 @@ import {
   updateDoc,
   getDoc,
 } from "firebase/firestore";
-import { db } from "../firebase/config";
+import { auth, db } from "../firebase/config";
 import DataTable from "react-data-table-component";
 import { FiPlus, FiTrash, FiTrash2, FiX } from "react-icons/fi";
 import Swal from "sweetalert2";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function KasBanjari() {
   const [kasList, setKasList] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [user, setUser] = useState(null); // 🔑 simpan user login
+  useEffect(() => {
+    fetchKasData();
+
+    // cek status login
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const [formData, setFormData] = useState({
     tanggal: "",
     keterangan: "",
@@ -73,6 +86,15 @@ export default function KasBanjari() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!user) {
+      Swal.fire(
+        "Akses Ditolak",
+        "Silakan login untuk menambah data.",
+        "warning"
+      );
+      return;
+    }
+
     try {
       // Ambil saldo terakhir berdasarkan timestamp terbaru
       const q = query(
@@ -114,6 +136,14 @@ export default function KasBanjari() {
   };
 
   const handleDelete = async (id) => {
+    if (!user) {
+      Swal.fire(
+        "Akses Ditolak",
+        "Silakan login untuk menghapus data.",
+        "warning"
+      );
+      return;
+    }
     const result = await Swal.fire({
       title: "Yakin ingin menghapus?",
       text: "Data yang dihapus tidak bisa dikembalikan!",
@@ -170,6 +200,35 @@ export default function KasBanjari() {
     }
   };
 
+  const handleSendWhatsApp = () => {
+    const fiveLatest = kasList.slice(0, 5); // ambil 5 transaksi terakhir
+
+    let message = `📊 *Laporan Kas Al Banjari*\n\n💰 Saldo saat ini: *${formatRupiah(
+      totalSaldo
+    )}*\n\n📝 *5 Transaksi Terakhir:*\n`;
+
+    fiveLatest.forEach((item, idx) => {
+      const tanggal = item.tanggal
+        ? item.tanggal.toLocaleDateString("id-ID")
+        : "-";
+      message += `\n${idx + 1}. 📅 ${tanggal}\n   ✏️ ${
+        item.keterangan
+      }\n   ➕ Masuk: ${formatRupiah(item.masuk)}\n   ➖ Keluar: ${formatRupiah(
+        item.keluar
+      )}\n   💳 Saldo: ${formatRupiah(item.saldo)}\n----------------------`;
+    });
+
+    message += `\n\n🔗 Lihat lebih lengkap di:\nhttps://kasku.vercel.app/kas-banjari`;
+
+    // encode pesan supaya terbaca di URL
+    const encodedMessage = encodeURIComponent(message);
+
+    // ganti nomor tujuan WA sesuai kebutuhan, atau biarkan kosong agar user memilih kontak
+    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+
+    window.open(whatsappUrl, "_blank");
+  };
+
   const columns = [
     {
       name: "No",
@@ -207,15 +266,18 @@ export default function KasBanjari() {
     },
     {
       name: "Aksi",
-      cell: (row) => (
-        <button
-          onClick={() => handleDelete(row.id)}
-          className="flex items-center gap-2 bg-red-700 text-white px-4 py-2 rounded-md hover:bg-red-800 transition duration-200"
-          title="Hapus"
-        >
-          <FiTrash2 size={10} />
-        </button>
-      ),
+      cell: (row) =>
+        user ? (
+          <button
+            onClick={() => handleDelete(row.id)}
+            className="flex items-center gap-2 bg-red-700 text-white px-4 py-2 rounded-md hover:bg-red-800 transition duration-200"
+            title="Hapus"
+          >
+            <FiTrash2 size={10} />
+          </button>
+        ) : (
+          <span className="text-gray-400 italic text-sm">-</span>
+        ),
       ignoreRowClick: true,
       allowOverflow: true,
       button: true,
@@ -253,12 +315,22 @@ export default function KasBanjari() {
             Total Saldo Banjari Saat Ini:{" "}
             <span className="text-green-600">{formatRupiah(totalSaldo)}</span>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition duration-200 justify-center"
-          >
-            <FiPlus /> Buat Data
-          </button>
+          <div className="flex gap-2">
+            {user && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition duration-200"
+              >
+                <FiPlus /> Buat Data
+              </button>
+            )}
+            <button
+              onClick={handleSendWhatsApp}
+              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-200"
+            >
+              Kirim ke WhatsApp
+            </button>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-4">
