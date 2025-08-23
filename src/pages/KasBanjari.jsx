@@ -315,22 +315,22 @@ export default function KasBanjari() {
             Total Saldo Banjari Saat Ini:{" "}
             <span className="text-green-600">{formatRupiah(totalSaldo)}</span>
           </div>
-          <div className="flex gap-2">
-            {user && (
+          {user && (
+            <div className="flex gap-2">
               <button
                 onClick={() => setShowModal(true)}
                 className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition duration-200"
               >
                 <FiPlus /> Buat Data
               </button>
-            )}
-            <button
-              onClick={handleSendWhatsApp}
-              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-200"
-            >
-              Kirim ke WhatsApp
-            </button>
-          </div>
+              <button
+                onClick={handleSendWhatsApp}
+                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-200"
+              >
+                Kirim ke WhatsApp
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-4">
