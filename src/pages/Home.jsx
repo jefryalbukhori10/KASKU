@@ -22,6 +22,14 @@ export default function Home() {
           <FaHistory className="text-4xl text-blue-500 mb-4" />
           <h2 className="text-lg font-semibold text-gray-800">KAS BANJARI</h2>
         </Link>
+        {/* Card 3 */}
+        <Link
+          to="/kas-upzis"
+          className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 flex flex-col items-center justify-center py-16"
+        >
+          <FaHistory className="text-4xl text-blue-500 mb-4" />
+          <h2 className="text-lg font-semibold text-gray-800">KAS UPZIS</h2>
+        </Link>
       </div>
     </div>
   );

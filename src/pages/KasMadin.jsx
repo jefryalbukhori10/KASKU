@@ -73,12 +73,33 @@ export default function KasMadin() {
     setKasList(data);
   };
 
+  // const handleInputChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     [name]: name === "masuk" || name === "keluar" ? Number(value) : value,
+  //   }));
+  // };
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "masuk" || name === "keluar" ? Number(value) : value,
-    }));
+
+    if (name === "masuk" || name === "keluar") {
+      // Hapus semua karakter non-digit
+      const numericValue = value.replace(/\D/g, "");
+
+      // Simpan angka murni
+      const numberValue = numericValue ? parseInt(numericValue, 10) : 0;
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: numberValue,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -374,9 +395,13 @@ export default function KasMadin() {
                     Masuk
                   </label>
                   <input
-                    type="number"
+                    type="text"
                     name="masuk"
-                    value={formData.masuk}
+                    value={
+                      formData.masuk
+                        ? new Intl.NumberFormat("id-ID").format(formData.masuk)
+                        : ""
+                    }
                     onChange={handleInputChange}
                     className="w-full border border-gray-300 rounded px-3 py-2"
                   />
@@ -386,9 +411,13 @@ export default function KasMadin() {
                     Keluar
                   </label>
                   <input
-                    type="number"
+                    type="text"
                     name="keluar"
-                    value={formData.keluar}
+                    value={
+                      formData.keluar
+                        ? new Intl.NumberFormat("id-ID").format(formData.keluar)
+                        : ""
+                    }
                     onChange={handleInputChange}
                     className="w-full border border-gray-300 rounded px-3 py-2"
                   />

@@ -1,4 +1,4 @@
-// src/pages/KasBanjari.jsx
+// src/pages/KasMadin.jsx
 import React, { useEffect, useState } from "react";
 import {
   collection,
@@ -19,7 +19,7 @@ import { FiPlus, FiTrash, FiTrash2, FiX } from "react-icons/fi";
 import Swal from "sweetalert2";
 import { onAuthStateChanged } from "firebase/auth";
 
-export default function KasBanjari() {
+export default function KasUpzis() {
   const [kasList, setKasList] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [user, setUser] = useState(null); // 🔑 simpan user login
@@ -56,10 +56,7 @@ export default function KasBanjari() {
   };
 
   const fetchKasData = async () => {
-    const q = query(
-      collection(db, "kas_banjari"),
-      orderBy("timestamp", "desc")
-    );
+    const q = query(collection(db, "kas_upzis"), orderBy("timestamp", "desc"));
     const querySnapshot = await getDocs(q);
     const data = querySnapshot.docs.map((doc) => {
       const item = doc.data();
@@ -76,13 +73,6 @@ export default function KasBanjari() {
     setKasList(data);
   };
 
-  // const handleInputChange = (e) => {
-  //   const { name, value } = e.target;
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     [name]: name === "masuk" || name === "keluar" ? Number(value) : value,
-  //   }));
-  // };
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
@@ -104,22 +94,14 @@ export default function KasBanjari() {
       }));
     }
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!user) {
-      Swal.fire(
-        "Akses Ditolak",
-        "Silakan login untuk menambah data.",
-        "warning"
-      );
-      return;
-    }
 
     try {
       // Ambil saldo terakhir berdasarkan timestamp terbaru
       const q = query(
-        collection(db, "kas_banjari"),
+        collection(db, "kas_upzis"),
         orderBy("timestamp", "desc"),
         limit(1)
       );
@@ -138,7 +120,7 @@ export default function KasBanjari() {
       const saldoBaru = saldoTerakhir + masuk - keluar;
 
       // Simpan data baru ke Firebase
-      await addDoc(collection(db, "kas_banjari"), {
+      await addDoc(collection(db, "kas_upzis"), {
         tanggal: Timestamp.fromDate(new Date(formData.tanggal)), // tanggal input manual
         keterangan: formData.keterangan,
         masuk,
@@ -157,14 +139,6 @@ export default function KasBanjari() {
   };
 
   const handleDelete = async (id) => {
-    if (!user) {
-      Swal.fire(
-        "Akses Ditolak",
-        "Silakan login untuk menghapus data.",
-        "warning"
-      );
-      return;
-    }
     const result = await Swal.fire({
       title: "Yakin ingin menghapus?",
       text: "Data yang dihapus tidak bisa dikembalikan!",
@@ -179,7 +153,7 @@ export default function KasBanjari() {
     if (result.isConfirmed) {
       try {
         // Ambil dokumen yang akan dihapus
-        const docRef = doc(db, "kas_banjari", id);
+        const docRef = doc(db, "kas_upzis", id);
         const docSnap = await getDoc(docRef);
 
         if (!docSnap.exists()) {
@@ -192,7 +166,7 @@ export default function KasBanjari() {
 
         // Ambil semua data kas dan urutkan naik berdasarkan timestamp
         const q = query(
-          collection(db, "kas_banjari"),
+          collection(db, "kas_upzis"),
           orderBy("timestamp", "asc")
         );
         const snapshot = await getDocs(q);
@@ -207,7 +181,7 @@ export default function KasBanjari() {
 
           saldo += masuk - keluar;
 
-          await updateDoc(doc(db, "kas_banjari", d.id), {
+          await updateDoc(doc(db, "kas_upzis", d.id), {
             saldo: saldo,
           });
         }
@@ -224,7 +198,7 @@ export default function KasBanjari() {
   const handleSendWhatsApp = () => {
     const fiveLatest = kasList.slice(0, 5); // ambil 5 transaksi terakhir
 
-    let message = `📊 *Laporan Kas Al Banjari*\n\n💰 Saldo saat ini: *${formatRupiah(
+    let message = `📊 *Laporan Kas Upzis*\n\n💰 Saldo saat ini: *${formatRupiah(
       totalSaldo
     )}*\n\n📝 *5 Transaksi Terakhir:*\n`;
 
@@ -239,7 +213,7 @@ export default function KasBanjari() {
       )}\n   💳 Saldo: ${formatRupiah(item.saldo)}\n----------------------`;
     });
 
-    message += `\n\n🔗 Lihat lebih lengkap di:\nhttps://kasku.vercel.app/kas-banjari`;
+    message += `\n\n🔗 Lihat lebih lengkap di:\nhttps://kasku.vercel.app/kas-upzis`;
 
     // encode pesan supaya terbaca di URL
     const encodedMessage = encodeURIComponent(message);
@@ -333,7 +307,7 @@ export default function KasBanjari() {
       <div className="container mx-auto mt-10 px-4">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4 bg-white rounded-lg shadow-md p-4">
           <div className="text-lg font-semibold text-gray-800">
-            Total Saldo Banjari Saat Ini:{" "}
+            Total Saldo Upzis Saat Ini:{" "}
             <span className="text-green-600">{formatRupiah(totalSaldo)}</span>
           </div>
           {user && (
@@ -344,6 +318,7 @@ export default function KasBanjari() {
               >
                 <FiPlus /> Buat Data
               </button>
+
               <button
                 onClick={handleSendWhatsApp}
                 className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-200"
