@@ -195,33 +195,66 @@ export default function KasUpzis() {
     }
   };
 
-  const handleSendWhatsApp = () => {
-    const fiveLatest = kasList.slice(0, 5); // ambil 5 transaksi terakhir
+  // const handleSendWhatsApp = () => {
+  //   const fiveLatest = kasList.slice(0, 5); // ambil 5 transaksi terakhir
 
-    let message = `📊 *Laporan Kas Upzis*\n\n💰 Saldo saat ini: *${formatRupiah(
-      totalSaldo
-    )}*\n\n📝 *5 Transaksi Terakhir:*\n`;
+  //   let message = `📊 *Laporan Kas Upzis*\n\n💰 Saldo saat ini: *${formatRupiah(
+  //     totalSaldo
+  //   )}*\n\n📝 *5 Transaksi Terakhir:*\n`;
+
+  //   fiveLatest.forEach((item, idx) => {
+  //     const tanggal = item.tanggal
+  //       ? item.tanggal.toLocaleDateString("id-ID")
+  //       : "-";
+  //     message += `\n${idx + 1}. 📅 ${tanggal}\n   ✏️ ${
+  //       item.keterangan
+  //     }\n   ➕ Masuk: ${formatRupiah(item.masuk)}\n   ➖ Keluar: ${formatRupiah(
+  //       item.keluar
+  //     )}\n   💳 Saldo: ${formatRupiah(item.saldo)}\n----------------------`;
+  //   });
+
+  //   message += `\n\n🔗 Lihat lebih lengkap di:\nhttps://kasku.vercel.app/kas-upzis`;
+
+  //   // encode pesan supaya terbaca di URL
+  //   const encodedMessage = encodeURIComponent(message);
+
+  //   // ganti nomor tujuan WA sesuai kebutuhan, atau biarkan kosong agar user memilih kontak
+  //   const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+
+  //   window.open(whatsappUrl, "_blank");
+  // };
+
+  const handleSendWhatsApp = () => {
+    const fiveLatest = kasList.slice(0, 5);
+    let message = `LAPORAN KAS UPZIS\n\n`;
+    message += `Saldo saat ini : ${formatRupiah(totalSaldo)}\n\n`;
+    message += `5 Transaksi Terakhir:\n\n`;
 
     fiveLatest.forEach((item, idx) => {
       const tanggal = item.tanggal
         ? item.tanggal.toLocaleDateString("id-ID")
         : "-";
-      message += `\n${idx + 1}. 📅 ${tanggal}\n   ✏️ ${
-        item.keterangan
-      }\n   ➕ Masuk: ${formatRupiah(item.masuk)}\n   ➖ Keluar: ${formatRupiah(
-        item.keluar
-      )}\n   💳 Saldo: ${formatRupiah(item.saldo)}\n----------------------`;
+
+      // Atur panjang label (10 karakter biar rata)
+      const labels = {
+        Tanggal: tanggal,
+        Keterangan: item.keterangan || "-",
+        Masuk: formatRupiah(item.masuk),
+        Keluar: formatRupiah(item.keluar),
+        Saldo: formatRupiah(item.saldo),
+      };
+
+      message += `${idx + 1})\n`;
+      Object.entries(labels).forEach(([key, value]) => {
+        message += `${key.padEnd(10)} : ${value}\n`;
+      });
+      message += "---------------------------------\n";
     });
 
-    message += `\n\n🔗 Lihat lebih lengkap di:\nhttps://kasku.vercel.app/kas-upzis`;
+    message += `\nLihat lebih lengkap di:\nhttps://kasku.vercel.app/kas-upzis`;
 
-    // encode pesan supaya terbaca di URL
-    const encodedMessage = encodeURIComponent(message);
-
-    // ganti nomor tujuan WA sesuai kebutuhan, atau biarkan kosong agar user memilih kontak
-    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
-
-    window.open(whatsappUrl, "_blank");
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
   };
 
   const columns = [
@@ -310,23 +343,25 @@ export default function KasUpzis() {
             Total Saldo Upzis Saat Ini:{" "}
             <span className="text-green-600">{formatRupiah(totalSaldo)}</span>
           </div>
-          {user && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowModal(true)}
-                className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition duration-200"
-              >
-                <FiPlus /> Buat Data
-              </button>
+          {user &&
+            (user.email === "admin@upzis.com" ||
+              user.email === "jefryalbukhori23@gmail.com") && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition duration-200"
+                >
+                  <FiPlus /> Buat Data
+                </button>
 
-              <button
-                onClick={handleSendWhatsApp}
-                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-200"
-              >
-                Kirim ke WhatsApp
-              </button>
-            </div>
-          )}
+                <button
+                  onClick={handleSendWhatsApp}
+                  className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-200"
+                >
+                  Kirim ke WhatsApp
+                </button>
+              </div>
+            )}
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-4">

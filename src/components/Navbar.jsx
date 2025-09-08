@@ -20,11 +20,24 @@ export default function Navbar() {
     navigate("/login"); // setelah logout diarahkan ke login
   };
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
   return (
     <nav className="bg-gray-800 text-white px-6 py-4 shadow-md flex justify-between items-center">
-      <Link to="/" className="text-xl font-bold hover:text-gray-400">
-        KEUANGAN
-      </Link>
+      {user ? (
+        <Link to="/" className="text-xl font-bold hover:text-gray-400">
+          KEUANGAN
+        </Link>
+      ) : (
+        <Link to="#" className="text-xl font-bold hover:text-gray-400">
+          KEUANGAN
+        </Link>
+      )}
 
       <div>
         {!user ? (
