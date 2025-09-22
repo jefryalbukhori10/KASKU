@@ -320,7 +320,9 @@ export default function KasBanjari() {
     {
       name: "Aksi",
       cell: (row) =>
-        user ? (
+        user &&
+        (user.email === "admin@banjari.com" ||
+          user.email === "jefryalbukhori23@gmail.com") ? (
           <button
             onClick={() => handleDelete(row.id)}
             className="flex items-center gap-2 bg-red-700 text-white px-4 py-2 rounded-md hover:bg-red-800 transition duration-200"
