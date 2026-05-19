@@ -498,7 +498,19 @@ export default function KasBanjari() {
           </div>
 
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={chartData}>
+            <BarChart data={chartData} barCategoryGap={18}>
+              <defs>
+                <linearGradient id="premiumMasuk" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" />
+                  <stop offset="100%" stopColor="#34d399" />
+                </linearGradient>
+
+                <linearGradient id="premiumKeluar" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ef4444" />
+                  <stop offset="100%" stopColor="#f87171" />
+                </linearGradient>
+              </defs>
+
               <CartesianGrid
                 vertical={false}
                 strokeDasharray="3 3"
@@ -517,13 +529,20 @@ export default function KasBanjari() {
 
               <YAxis hide />
 
-              <Tooltip formatter={(value) => formatRupiah(value)} />
+              <Tooltip
+                formatter={(value) => formatRupiah(value)}
+                contentStyle={{
+                  borderRadius: 18,
+                  border: "none",
+                  boxShadow: "0 20px 50px rgba(0,0,0,0.08)",
+                }}
+              />
 
               <Legend />
 
               <Bar
                 dataKey="Masuk"
-                fill="#10b981"
+                fill="url(#premiumMasuk)"
                 radius={[14, 14, 0, 0]}
                 maxBarSize={26}
                 isAnimationActive={false}
@@ -531,7 +550,7 @@ export default function KasBanjari() {
 
               <Bar
                 dataKey="Keluar"
-                fill="#ef4444"
+                fill="url(#premiumKeluar)"
                 radius={[14, 14, 0, 0]}
                 maxBarSize={26}
                 isAnimationActive={false}
@@ -571,7 +590,7 @@ export default function KasBanjari() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.03 }}
-              className="bg-white rounded-[30px] border border-black/5 shadow-[0_10px_35px_rgba(0,0,0,0.03)] overflow-hidden"
+              className="group bg-white rounded-[30px] border border-black/5 shadow-[0_10px_35px_rgba(0,0,0,0.03)] overflow-hidden"
             >
               <div className="p-5">
                 <div className="flex items-start justify-between gap-4">
@@ -637,7 +656,7 @@ export default function KasBanjari() {
                         user.email === "jefryalbukhori23@gmail.com") && (
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="mt-5 text-red-500 hover:text-red-700"
+                          className="mt-5 opacity-0 group-hover:opacity-100 transition text-red-500 hover:text-red-700"
                         >
                           <FiTrash2 size={18} />
                         </button>
@@ -648,7 +667,130 @@ export default function KasBanjari() {
             </motion.div>
           ))}
         </div>
+
+        {/* ================= PAGINATION ================= */}
+        <div className="flex justify-center items-center gap-3 mt-7">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-5 py-2.5 rounded-2xl bg-white border border-black/5 shadow-sm text-sm disabled:opacity-40"
+          >
+            Sebelumnya
+          </button>
+
+          <div className="px-5 py-2.5 rounded-2xl bg-[#111827] text-white text-sm font-medium shadow-lg">
+            {page} / {totalPages}
+          </div>
+
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="px-5 py-2.5 rounded-2xl bg-white border border-black/5 shadow-sm text-sm disabled:opacity-40"
+          >
+            Berikutnya
+          </button>
+        </div>
       </div>
+
+      {/* ================= FLOATING BUTTON ================= */}
+      {user &&
+        (user.email === "admin@banjari.com" ||
+          user.email === "jefryalbukhori23@gmail.com") && (
+          <motion.button
+            whileTap={{ scale: 0.92 }}
+            onClick={() => setShowModal(true)}
+            className="fixed bottom-6 right-5 z-50 w-16 h-16 rounded-full bg-[#111827] text-white shadow-[0_20px_50px_rgba(17,24,39,0.3)] flex items-center justify-center"
+          >
+            <FiPlus size={26} />
+          </motion.button>
+        )}
+
+      {/* ================= MODAL ================= */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-end md:items-center justify-center">
+          <motion.div
+            whileTap={{ scale: 0.985 }}
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="w-full max-w-md bg-white rounded-t-[34px] md:rounded-[34px] p-6"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-[#111827]">
+                  Tambah Transaksi
+                </h2>
+
+                <p className="text-sm text-gray-500 mt-1">
+                  Tambahkan data kas baru
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowModal(false)}
+                className="w-11 h-11 rounded-2xl bg-[#f3f4f6] flex items-center justify-center"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input
+                type="date"
+                name="tanggal"
+                value={formData.tanggal}
+                onChange={handleInputChange}
+                required
+                className="w-full rounded-2xl border border-gray-200 bg-[#fafafa] px-4 py-3 outline-none focus:ring-2 focus:ring-[#111827]"
+              />
+
+              <input
+                type="text"
+                name="keterangan"
+                placeholder="Keterangan transaksi"
+                value={formData.keterangan}
+                onChange={handleInputChange}
+                required
+                className="w-full rounded-2xl border border-gray-200 bg-[#fafafa] px-4 py-3 outline-none focus:ring-2 focus:ring-[#111827]"
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  name="masuk"
+                  placeholder="Kas Masuk"
+                  value={
+                    formData.masuk
+                      ? new Intl.NumberFormat("id-ID").format(formData.masuk)
+                      : ""
+                  }
+                  onChange={handleInputChange}
+                  className="rounded-2xl border border-gray-200 bg-[#fafafa] px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+
+                <input
+                  type="text"
+                  name="keluar"
+                  placeholder="Kas Keluar"
+                  value={
+                    formData.keluar
+                      ? new Intl.NumberFormat("id-ID").format(formData.keluar)
+                      : ""
+                  }
+                  onChange={handleInputChange}
+                  className="rounded-2xl border border-gray-200 bg-[#fafafa] px-4 py-3 outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3.5 rounded-2xl bg-[#111827] text-white font-medium shadow-lg hover:opacity-95 transition"
+              >
+                Simpan Transaksi
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
