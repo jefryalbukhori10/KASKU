@@ -51,6 +51,17 @@ export default function Home() {
         (user.email === "admin@upzis.com" ||
           user.email === "jefryalbukhori23@gmail.com"),
     },
+
+    {
+      title: "Kas Bal RW 09",
+      desc: "Laporan keuangan Bal RW 09",
+      link: "/kas-bal",
+      color: "from-red-500 to-pink-500",
+      allowed:
+        user &&
+        (user.email === "admin@bal.com" ||
+          user.email === "jefryalbukhori23@gmail.com"),
+    },
   ];
 
   return (

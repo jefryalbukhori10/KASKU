@@ -6,6 +6,7 @@ import KasMadin from "./pages/KasMadin";
 import KasBanjari from "./pages/KasBanjari";
 import Login from "./pages/Login";
 import KasUpzis from "./pages/KasUpzis";
+import KasBal from "./pages/KasBal";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/kas-madin" element={<KasMadin />} />
           <Route path="/kas-banjari" element={<KasBanjari />} />
           <Route path="/kas-upzis" element={<KasUpzis />} />
+          <Route path="/kas-bal" element={<KasBal />} />
           <Route path="/login" element={<Login />} />
         </Route>
       </Routes>
