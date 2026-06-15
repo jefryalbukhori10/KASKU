@@ -62,6 +62,17 @@ export default function Home() {
         (user.email === "admin@bal.com" ||
           user.email === "jefryalbukhori23@gmail.com"),
     },
+
+    {
+      title: "Kas Bersih Dusun",
+      desc: "Laporan keuangan Kas Bersih Dusun",
+      link: "/kas-bersih-dusun",
+      color: "from-green-500 to-teal-500",
+      allowed:
+        user &&
+        (user.email === "admin@bersihdusun.com" ||
+          user.email === "jefryalbukhori23@gmail.com"),
+    },
   ];
 
   return (
