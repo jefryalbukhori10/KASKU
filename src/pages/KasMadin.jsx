@@ -28,7 +28,9 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
-import { FaWhatsapp } from "react-icons/fa";
+import { FaFileExcel, FaWhatsapp } from "react-icons/fa";
+
+import * as XLSX from "xlsx-js-style";
 
 export default function KasMadin() {
   const [kasList, setKasList] = useState([]);
@@ -59,6 +61,324 @@ export default function KasMadin() {
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(number);
+
+  const handleDownloadExcel = () => {
+    try {
+      const pemasukan = [...kasList]
+        .filter((item) => Number(item.masuk) > 0)
+        .reverse();
+
+      const pengeluaran = [...kasList]
+        .filter((item) => Number(item.keluar) > 0)
+        .reverse();
+
+      const totalPemasukan = pemasukan.reduce(
+        (sum, item) => sum + (item.masuk || 0),
+        0,
+      );
+
+      const totalPengeluaran = pengeluaran.reduce(
+        (sum, item) => sum + (item.keluar || 0),
+        0,
+      );
+
+      const saldoAkhir = totalPemasukan - totalPengeluaran;
+
+      let subtotalMasuk = 0;
+
+      const pemasukanRows = pemasukan.map((item, index) => {
+        subtotalMasuk += item.masuk;
+
+        return [index + 1, item.keterangan, item.masuk, subtotalMasuk];
+      });
+
+      let subtotalKeluar = 0;
+      let saldoBerjalan = totalPemasukan;
+
+      const pengeluaranRows = pengeluaran.map((item, index) => {
+        subtotalKeluar += item.keluar;
+        saldoBerjalan -= item.keluar;
+
+        return [
+          index + 1,
+          item.keterangan,
+          item.keluar,
+          subtotalKeluar,
+          saldoBerjalan,
+        ];
+      });
+
+      const sheetData = [
+        ["LAPORAN KAS BANJARI"],
+        [`TAHUN ${new Date().getFullYear()}`],
+        [],
+
+        ["PEMASUKAN"],
+        ["NO", "PEMASUKAN", "JUMLAH", "SUB TOTAL"],
+
+        ...pemasukanRows,
+
+        ["", "TOTAL PEMASUKAN", "", totalPemasukan],
+
+        [],
+        [],
+
+        ["PENGELUARAN"],
+        ["NO", "PENGELUARAN", "TOTAL BIAYA", "SUB TOTAL", "SALDO"],
+
+        ...pengeluaranRows,
+
+        ["", "TOTAL PENGELUARAN", "", totalPengeluaran, saldoAkhir],
+
+        [],
+        [],
+        [],
+
+        ["PEMASUKAN", "", "", totalPemasukan],
+        ["PENGELUARAN", "", "", totalPengeluaran],
+        ["SISA SALDO", "", "", saldoAkhir],
+      ];
+
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+      ws["!cols"] = [
+        { wch: 8 },
+        { wch: 40 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 18 },
+      ];
+
+      ws["!merges"] = [
+        XLSX.utils.decode_range("A1:E1"),
+        XLSX.utils.decode_range("A2:E2"),
+      ];
+
+      const borderStyle = {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } },
+      };
+
+      const currencyFormat = '"Rp" #,##0';
+
+      const range = XLSX.utils.decode_range(ws["!ref"]);
+
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+
+          if (!ws[cellAddress]) continue;
+
+          ws[cellAddress].s = {
+            border: borderStyle,
+            alignment: {
+              vertical: "center",
+              horizontal: "center",
+            },
+          };
+        }
+      }
+
+      // Judul
+      ["A1", "A2"].forEach((cell) => {
+        ws[cell].s = {
+          font: {
+            bold: true,
+            sz: 16,
+          },
+          alignment: {
+            horizontal: "center",
+            vertical: "center",
+          },
+        };
+      });
+
+      // Header PEMASUKAN
+      const pemasukanHeaderRow = 5;
+
+      ["A", "B", "C", "D"].forEach((col) => {
+        ws[`${col}${pemasukanHeaderRow}`].s = {
+          fill: {
+            fgColor: { rgb: "FFFF00" },
+          },
+          font: {
+            bold: true,
+          },
+          border: borderStyle,
+          alignment: {
+            horizontal: "center",
+          },
+        };
+      });
+
+      // Header PENGELUARAN
+      const pengeluaranHeaderRow = pemasukanRows.length + 10;
+
+      ["A", "B", "C", "D", "E"].forEach((col) => {
+        ws[`${col}${pengeluaranHeaderRow}`].s = {
+          fill: {
+            fgColor: { rgb: "FFFF00" },
+          },
+          font: {
+            bold: true,
+          },
+          border: borderStyle,
+          alignment: {
+            horizontal: "center",
+          },
+        };
+      });
+
+      // Format rupiah pemasukan
+      for (let row = 6; row <= pemasukanRows.length + 6; row++) {
+        ["C", "D"].forEach((col) => {
+          const cell = ws[`${col}${row}`];
+          if (cell) {
+            cell.z = currencyFormat;
+            cell.s = {
+              ...cell.s,
+              alignment: {
+                horizontal: "right",
+              },
+            };
+          }
+        });
+      }
+
+      // Total pemasukan
+      const totalMasukRow = pemasukanRows.length + 6;
+
+      ["A", "B", "C", "D"].forEach((col) => {
+        if (ws[`${col}${totalMasukRow}`]) {
+          ws[`${col}${totalMasukRow}`].s = {
+            fill: {
+              fgColor: { rgb: "92D050" },
+            },
+            font: {
+              bold: true,
+            },
+            border: borderStyle,
+          };
+        }
+      });
+
+      // Format rupiah pengeluaran
+      const startPengeluaranData = pengeluaranHeaderRow + 1;
+
+      for (
+        let row = startPengeluaranData;
+        row < startPengeluaranData + pengeluaranRows.length;
+        row++
+      ) {
+        ["C", "D", "E"].forEach((col) => {
+          const cell = ws[`${col}${row}`];
+
+          if (cell) {
+            cell.z = currencyFormat;
+            cell.s = {
+              ...cell.s,
+              alignment: {
+                horizontal: "right",
+              },
+            };
+          }
+        });
+      }
+
+      // Total pengeluaran
+      const totalKeluarRow = startPengeluaranData + pengeluaranRows.length;
+
+      ["A", "B", "C", "D", "E"].forEach((col) => {
+        if (ws[`${col}${totalKeluarRow}`]) {
+          ws[`${col}${totalKeluarRow}`].s = {
+            fill: {
+              fgColor: { rgb: "92D050" },
+            },
+            font: {
+              bold: true,
+            },
+            border: borderStyle,
+          };
+        }
+      });
+
+      const summaryStartRow = totalKeluarRow + 4;
+
+      // format rupiah summary
+      for (let row = summaryStartRow; row <= summaryStartRow + 2; row++) {
+        const cell = ws[`B${row}`];
+
+        if (cell) {
+          cell.z = '"Rp" #,##0';
+          cell.s = {
+            border: borderStyle,
+            font: {
+              bold: true,
+            },
+            alignment: {
+              horizontal: "right",
+            },
+          };
+        }
+
+        if (ws[`A${row}`]) {
+          ws[`A${row}`].s = {
+            border: borderStyle,
+            font: {
+              bold: true,
+            },
+          };
+        }
+      }
+
+      // warna hijau SISA SALDO
+      ["A", "B"].forEach((col) => {
+        if (ws[`${col}${summaryStartRow + 2}`]) {
+          ws[`${col}${summaryStartRow + 2}`].s = {
+            border: borderStyle,
+            fill: {
+              fgColor: {
+                rgb: "A9D18E",
+              },
+            },
+            font: {
+              bold: true,
+              sz: 14,
+            },
+          };
+        }
+      });
+
+      ws["!merges"].push(
+        XLSX.utils.decode_range(`A${summaryStartRow}:C${summaryStartRow}`),
+        XLSX.utils.decode_range(
+          `A${summaryStartRow + 1}:C${summaryStartRow + 1}`,
+        ),
+        XLSX.utils.decode_range(
+          `A${summaryStartRow + 2}:C${summaryStartRow + 2}`,
+        ),
+      );
+
+      const wb = XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(wb, ws, "Laporan Kas");
+
+      XLSX.writeFile(
+        wb,
+        `Laporan_Kas_Banjari_${new Date().getFullYear()}.xlsx`,
+      );
+    } catch (error) {
+      console.error(error);
+
+      Swal.fire(
+        "Gagal",
+        "Terjadi kesalahan saat membuat laporan Excel",
+        "error",
+      );
+    }
+  };
 
   const fetchKasData = async () => {
     const q = query(collection(db, "kas_madin"), orderBy("timestamp", "desc"));
@@ -400,16 +720,25 @@ export default function KasMadin() {
               </p>
             </div>
 
-            {/* BUTTON WHATSAPP */}
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={handleSendWhatsApp}
-              className="shrink-0 h-12 px-4 rounded-2xl bg-[#25D366] text-white shadow-[0_10px_30px_rgba(37,211,102,0.35)] flex items-center gap-2 font-medium"
-            >
-              <FaWhatsapp size={20} />
+            <div className="flex gap-2">
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={handleDownloadExcel}
+                className="h-12 px-4 rounded-2xl bg-green-600 text-white flex items-center gap-2 font-medium"
+              >
+                <FaFileExcel />
+                <span className="hidden md:block">Excel</span>
+              </motion.button>
 
-              <span className="hidden md:block">Kirim</span>
-            </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={handleSendWhatsApp}
+                className="h-12 px-4 rounded-2xl bg-[#25D366] text-white flex items-center gap-2 font-medium"
+              >
+                <FaWhatsapp size={20} />
+                <span className="hidden md:block">WhatsApp</span>
+              </motion.button>
+            </div>
           </div>
 
           <div className="space-y-4">
