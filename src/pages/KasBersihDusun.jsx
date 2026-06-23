@@ -18,7 +18,7 @@ import DataTable from "react-data-table-component";
 import { FiPlus, FiTrash, FiTrash2, FiX } from "react-icons/fi";
 import Swal from "sweetalert2";
 import { onAuthStateChanged } from "firebase/auth";
-import { FaFileExcel, FaWhatsapp } from "react-icons/fa";
+import { FaFileExcel, FaWhatsapp, FaFilePdf } from "react-icons/fa";
 
 import { motion } from "framer-motion";
 
@@ -33,6 +33,9 @@ import {
   Legend,
 } from "recharts";
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 import * as XLSX from "xlsx-js-style";
 
 export default function KasBersihDusun() {
@@ -46,6 +49,11 @@ export default function KasBersihDusun() {
 
   const [isEdit, setIsEdit] = useState(false);
   const [editId, setEditId] = useState(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   useEffect(() => {
     fetchKasData();
@@ -85,11 +93,11 @@ export default function KasBersihDusun() {
 
   const handleDownloadExcel = () => {
     try {
-      const pemasukan = [...kasList]
+      const pemasukan = [...filteredData]
         .filter((item) => Number(item.masuk) > 0)
         .reverse();
 
-      const pengeluaran = [...kasList]
+      const pengeluaran = [...filteredData]
         .filter((item) => Number(item.keluar) > 0)
         .reverse();
 
@@ -129,9 +137,12 @@ export default function KasBersihDusun() {
         ];
       });
 
+      const periodeText =
+        startDate && endDate ? `${startDate} s/d ${endDate}` : "SEMUA PERIODE";
+
       const sheetData = [
         ["LAPORAN KAS BERSIH DUSUN"],
-        [`TAHUN ${new Date().getFullYear()}`],
+        [periodeText],
         [],
 
         ["PEMASUKAN"],
@@ -401,6 +412,63 @@ export default function KasBersihDusun() {
     }
   };
 
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+
+    const data = filteredData;
+
+    const pemasukan = data.reduce(
+      (sum, item) => sum + Number(item.masuk || 0),
+      0,
+    );
+
+    const pengeluaran = data.reduce(
+      (sum, item) => sum + Number(item.keluar || 0),
+      0,
+    );
+
+    const saldo = pemasukan - pengeluaran;
+
+    doc.setFontSize(16);
+
+    doc.text("LAPORAN KAS BERSIH DUSUN", 105, 15, { align: "center" });
+
+    doc.setFontSize(10);
+
+    doc.text(
+      `Periode: ${
+        startDate && endDate ? `${startDate} s/d ${endDate}` : "Semua Periode"
+      }`,
+      14,
+      25,
+    );
+
+    autoTable(doc, {
+      startY: 35,
+      head: [["Tanggal", "Keterangan", "Masuk", "Keluar"]],
+      body: data.map((item) => [
+        item.tanggal?.toLocaleDateString("id-ID"),
+        item.keterangan,
+        item.masuk ? formatRupiah(item.masuk) : "-",
+        item.keluar ? formatRupiah(item.keluar) : "-",
+      ]),
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 10;
+
+    doc.text(`Total Pemasukan : ${formatRupiah(pemasukan)}`, 14, finalY);
+
+    doc.text(
+      `Total Pengeluaran : ${formatRupiah(pengeluaran)}`,
+      14,
+      finalY + 8,
+    );
+
+    doc.text(`Saldo : ${formatRupiah(saldo)}`, 14, finalY + 16);
+
+    doc.save(`Laporan_Kas_Bersih_Dusun.pdf`);
+  };
+
   // const fetchKasData = async () => {
   //   const q = query(
   //     collection(db, "kas_bersih_dusun"),
@@ -584,7 +652,11 @@ export default function KasBersihDusun() {
 
         await recalculateSaldo();
 
-        Swal.fire("Berhasil", "Data berhasil diperbarui", "success");
+        // Swal.fire("Berhasil", "Data berhasil diperbarui", "success");
+        Toast.fire({
+          icon: "success",
+          title: "Data berhasil diperbarui",
+        });
       } else {
         await addDoc(collection(db, "kas_bersih_dusun"), {
           tanggal: Timestamp.fromDate(new Date(formData.tanggal)),
@@ -597,7 +669,11 @@ export default function KasBersihDusun() {
 
         await recalculateSaldo();
 
-        Swal.fire("Berhasil", "Data berhasil ditambahkan", "success");
+        // Swal.fire("Berhasil", "Data berhasil ditambahkan", "success");
+        Toast.fire({
+          icon: "success",
+          title: "Data berhasil ditambahkan",
+        });
       }
 
       setShowModal(false);
@@ -612,11 +688,15 @@ export default function KasBersihDusun() {
       await fetchKasData();
       Swal.close();
 
-      Swal.fire("Berhasil", "Data berhasil ditambahkan", "success");
+      // Swal.fire("Berhasil", "Data berhasil ditambahkan", "success");
     } catch (error) {
       console.error(error);
 
-      Swal.fire("Gagal", "Terjadi kesalahan", "error");
+      // Swal.fire("Gagal", "Terjadi kesalahan", "error");
+      Toast.fire({
+        icon: "error",
+        title: "Terjadi kesalahan",
+      });
     } finally {
       setIsEdit(false);
       setEditId(null);
@@ -684,7 +764,11 @@ export default function KasBersihDusun() {
 
       Swal.close();
 
-      Swal.fire("Berhasil", "Data berhasil dihapus.", "success");
+      // Swal.fire("Berhasil", "Data berhasil dihapus.", "success");
+      Toast.fire({
+        icon: "success",
+        title: "Data berhasil dihapus",
+      });
     } catch (error) {
       Swal.close();
 
@@ -726,8 +810,11 @@ export default function KasBersihDusun() {
   // };
 
   const handleSendWhatsApp = () => {
-    const fiveLatest = kasList.slice(0, 5);
+    const fiveLatest = filteredData.slice(0, 5);
+    const periodeText =
+      startDate && endDate ? `${startDate} s/d ${endDate}` : "Semua Periode";
     let message = `LAPORAN KAS BERSIH DUSUN\n\n`;
+    message += `Periode : ${periodeText}\n\n`;
     message += `Saldo saat ini : ${formatRupiah(totalSaldo)}\n\n`;
     message += `5 Transaksi Terakhir:\n\n`;
 
@@ -837,9 +924,26 @@ export default function KasBersihDusun() {
     },
   };
 
-  const totalPages = Math.ceil(kasList.length / perPage);
+  const filteredData = kasList.filter((item) => {
+    const cocokKeterangan = item.keterangan
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase());
 
-  const displayedData = kasList.slice((page - 1) * perPage, page * perPage);
+    const tanggalItem = item.tanggal;
+
+    const cocokTanggal =
+      (!startDate || tanggalItem >= new Date(startDate)) &&
+      (!endDate || tanggalItem <= new Date(endDate + "T23:59:59"));
+
+    return cocokKeterangan && cocokTanggal;
+  });
+
+  const totalPages = Math.ceil(filteredData.length / perPage);
+
+  const displayedData = filteredData.slice(
+    (page - 1) * perPage,
+    page * perPage,
+  );
 
   const chartData = kasList
     .slice(0, 10)
@@ -876,6 +980,26 @@ export default function KasBersihDusun() {
   const pengeluaranBulan = kasList
     .filter((k) => k.tanggal && k.tanggal.getMonth() === thisMonth)
     .reduce((a, b) => a + (b.keluar || 0), 0);
+
+  const pemasukanFilter = filteredData.reduce(
+    (sum, item) => sum + Number(item.masuk || 0),
+    0,
+  );
+
+  const pengeluaranFilter = filteredData.reduce(
+    (sum, item) => sum + Number(item.keluar || 0),
+    0,
+  );
+
+  const saldoFilter = pemasukanFilter - pengeluaranFilter;
+
+  const Toast = Swal.mixin({
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: 2500,
+    timerProgressBar: true,
+  });
 
   if (loading) {
     return (
@@ -1098,12 +1222,27 @@ export default function KasBersihDusun() {
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={handleDownloadExcel}
-              className="h-12 px-3 sm:px-4 rounded-2xl bg-green-600 text-white flex items-center gap-2 font-medium"
+              disabled={filteredData.length === 0}
+              className={`
+                  h-12 px-4 rounded-2xl text-white flex items-center gap-2 font-medium
+                  ${
+                    filteredData.length === 0
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-green-600"
+                  }
+                `}
             >
               <FaFileExcel />
               <span className="hidden md:block">Excel</span>
             </motion.button>
-
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={handleDownloadPDF}
+              className="h-12 px-4 rounded-2xl bg-red-600 text-white flex items-center gap-2 font-medium"
+            >
+              <FaFilePdf />
+              <span className="hidden md:block">PDF</span>
+            </motion.button>
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={handleSendWhatsApp}
@@ -1115,99 +1254,227 @@ export default function KasBersihDusun() {
           </div>
         </div>
 
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Cari transaksi..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setPage(1);
+            }}
+            className="
+                        w-full
+                        px-4
+                        py-3
+                        rounded-2xl
+                        bg-white
+                        border
+                        border-gray-200
+                        focus:ring-2
+                        focus:ring-[#111827]
+                        outline-none
+                      "
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => {
+              setStartDate(e.target.value);
+              setPage(1);
+            }}
+            className="
+                        px-4
+                        py-3
+                        rounded-2xl
+                        bg-white
+                        border
+                        border-gray-200
+                        focus:ring-2
+                        focus:ring-[#111827]
+                        outline-none
+                      "
+          />
+
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => {
+              setEndDate(e.target.value);
+              setPage(1);
+            }}
+            className="
+      px-4
+      py-3
+      rounded-2xl
+      bg-white
+      border
+      border-gray-200
+      focus:ring-2
+      focus:ring-[#111827]
+      outline-none
+    "
+          />
+          <button
+            onClick={() => {
+              setSearchTerm("");
+              setStartDate("");
+              setEndDate("");
+              setPage(1);
+            }}
+            className="
+    px-4
+    py-2
+    rounded-xl
+    bg-red-50
+    text-red-600
+    hover:bg-red-100
+    text-sm
+  "
+          >
+            Reset Filter
+          </button>
+          <p className="text-sm text-gray-500 mt-2">
+            Menampilkan {filteredData.length} transaksi
+          </p>
+        </div>
+
+        {/* <div className="grid grid-cols-3 gap-3 mb-5">
+          <div className="bg-white rounded-2xl p-4">
+            <p className="text-xs text-gray-500">Pemasukan</p>
+
+            <p className="font-semibold text-green-600 mt-1">
+              {formatRupiah(pemasukanFilter)}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl p-4">
+            <p className="text-xs text-gray-500">Pengeluaran</p>
+
+            <p className="font-semibold text-red-600 mt-1">
+              {formatRupiah(pengeluaranFilter)}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl p-4">
+            <p className="text-xs text-gray-500">Saldo</p>
+
+            <p className="font-semibold text-blue-600 mt-1">
+              {formatRupiah(saldoFilter)}
+            </p>
+          </div>
+        </div> */}
+
         {/* LIST TRANSAKSI */}
         <div className="space-y-4">
-          {displayedData.map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.03 }}
-              className="group bg-white rounded-[30px] border border-black/5 shadow-[0_10px_35px_rgba(0,0,0,0.03)] overflow-hidden"
-            >
-              <div className="p-5">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                  <div className="flex gap-4 flex-1">
-                    <div
-                      className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white text-lg ${
-                        item.masuk ? "bg-[#10b981]" : "bg-[#ef4444]"
-                      }`}
-                    >
-                      {item.masuk ? "↓" : "↑"}
-                    </div>
+          {displayedData.length === 0 ? (
+            <div className="bg-white rounded-[30px] p-10 text-center shadow-sm">
+              <div className="text-5xl mb-3">📋</div>
 
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-[#111827]">
-                        {item.keterangan}
-                      </h3>
+              <h3 className="text-lg font-semibold text-gray-700">
+                Tidak Ada Data
+              </h3>
 
-                      <div className="flex flex-wrap items-center gap-2 mt-3">
-                        <span className="px-3 py-1 rounded-full bg-[#f3f4f6] text-gray-600 text-xs">
-                          {item.tanggal?.toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          })}
-                        </span>
-
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            item.masuk
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-red-50 text-red-700"
-                          }`}
-                        >
-                          {item.masuk ? "Kas Masuk" : "Kas Keluar"}
-                        </span>
+              <p className="text-gray-500 mt-2">
+                Belum ada transaksi yang sesuai dengan filter.
+              </p>
+            </div>
+          ) : (
+            displayedData.map((item, index) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03 }}
+                className="group bg-white rounded-[30px] border border-black/5 shadow-[0_10px_35px_rgba(0,0,0,0.03)] overflow-hidden"
+              >
+                <div className="p-5">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div className="flex gap-4 flex-1">
+                      <div
+                        className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white text-lg ${
+                          item.masuk ? "bg-[#10b981]" : "bg-[#ef4444]"
+                        }`}
+                      >
+                        {item.masuk ? "↓" : "↑"}
                       </div>
 
-                      <div className="mt-4">
-                        <p className="text-xs text-gray-400">
-                          Saldo Setelah Transaksi
-                        </p>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-[#111827]">
+                          {item.keterangan}
+                        </h3>
 
-                        <p className="text-sm font-medium text-gray-700 mt-1">
-                          {formatRupiah(item.saldo)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                          <span className="px-3 py-1 rounded-full bg-[#f3f4f6] text-gray-600 text-xs">
+                            {item.tanggal?.toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            })}
+                          </span>
 
-                  <div className="text-left md:text-right">
-                    <p
-                      className={`text-lg md:text-xl font-semibold tracking-tight ${
-                        item.masuk ? "text-emerald-600" : "text-red-500"
-                      }`}
-                    >
-                      {item.masuk
-                        ? `+ ${formatRupiah(item.masuk)}`
-                        : `- ${formatRupiah(item.keluar)}`}
-                    </p>
-
-                    {user &&
-                      (user.email === "admin@bersihdusun.com" ||
-                        user.email === "jefryalbukhori23@gmail.com") && (
-                        <div className="flex items-center gap-2 justify-end mt-4">
-                          <button
-                            onClick={() => handleEdit(item)}
-                            className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center"
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              item.masuk
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-red-50 text-red-700"
+                            }`}
                           >
-                            ✏️
-                          </button>
-
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="w-9 h-9 rounded-full bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center"
-                          >
-                            <FiTrash2 size={16} />
-                          </button>
+                            {item.masuk ? "Kas Masuk" : "Kas Keluar"}
+                          </span>
                         </div>
-                      )}
+
+                        <div className="mt-4">
+                          <p className="text-xs text-gray-400">
+                            Saldo Setelah Transaksi
+                          </p>
+
+                          <p className="text-sm font-medium text-gray-700 mt-1">
+                            {formatRupiah(item.saldo)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-left md:text-right">
+                      <p
+                        className={`text-lg md:text-xl font-semibold tracking-tight ${
+                          item.masuk ? "text-emerald-600" : "text-red-500"
+                        }`}
+                      >
+                        {item.masuk
+                          ? `+ ${formatRupiah(item.masuk)}`
+                          : `- ${formatRupiah(item.keluar)}`}
+                      </p>
+
+                      {user &&
+                        (user.email === "admin@bersihdusun.com" ||
+                          user.email === "jefryalbukhori23@gmail.com") && (
+                          <div className="flex items-center gap-2 justify-end mt-4">
+                            <button
+                              onClick={() => handleEdit(item)}
+                              className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center"
+                            >
+                              ✏️
+                            </button>
+
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              className="w-9 h-9 rounded-full bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center"
+                            >
+                              <FiTrash2 size={16} />
+                            </button>
+                          </div>
+                        )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))
+          )}
         </div>
 
         {/* ================= PAGINATION ================= */}
