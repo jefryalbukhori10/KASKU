@@ -518,6 +518,45 @@ export default function KasBersihDusun() {
         };
       });
 
+      const dataAsc = [...data].sort((a, b) => {
+        const tanggalA = a.tanggal?.getTime() || 0;
+        const tanggalB = b.tanggal?.getTime() || 0;
+
+        if (tanggalA !== tanggalB) {
+          return tanggalA - tanggalB;
+        }
+
+        const tsA = a.timestamp?.seconds || 0;
+        const tsB = b.timestamp?.seconds || 0;
+
+        return tsA - tsB;
+      });
+
+      let saldoBerjalan = 0;
+
+      const dataWithSaldo = dataAsc.map((item) => {
+        saldoBerjalan += Number(item.masuk || 0) - Number(item.keluar || 0);
+
+        return {
+          ...item,
+          saldoBerjalan,
+        };
+      });
+
+      dataWithSaldo.sort((a, b) => {
+        const tanggalA = a.tanggal?.getTime() || 0;
+        const tanggalB = b.tanggal?.getTime() || 0;
+
+        if (tanggalA !== tanggalB) {
+          return tanggalB - tanggalA;
+        }
+
+        const tsA = a.timestamp?.seconds || 0;
+        const tsB = b.timestamp?.seconds || 0;
+
+        return tsB - tsA;
+      });
+
       const totalSaldo = data.reduce(
         (total, item) =>
           total + Number(item.masuk || 0) - Number(item.keluar || 0),
@@ -525,7 +564,7 @@ export default function KasBersihDusun() {
       );
 
       setTotalSaldo(totalSaldo);
-      setKasList(data);
+      setKasList(dataWithSaldo);
     } catch (error) {
       console.error("Gagal mengambil data:", error);
     } finally {
@@ -650,7 +689,7 @@ export default function KasBersihDusun() {
           keluar,
         });
 
-        await recalculateSaldo();
+        // await recalculateSaldo();
 
         // Swal.fire("Berhasil", "Data berhasil diperbarui", "success");
         Toast.fire({
@@ -667,7 +706,7 @@ export default function KasBersihDusun() {
           timestamp: Timestamp.now(),
         });
 
-        await recalculateSaldo();
+        // await recalculateSaldo();
 
         // Swal.fire("Berhasil", "Data berhasil ditambahkan", "success");
         Toast.fire({
@@ -758,7 +797,7 @@ export default function KasBersihDusun() {
 
       await deleteDoc(doc(db, "kas_bersih_dusun", id));
 
-      await recalculateSaldo();
+      // await recalculateSaldo();
 
       await fetchKasData();
 
@@ -829,7 +868,7 @@ export default function KasBersihDusun() {
         Keterangan: item.keterangan || "-",
         Masuk: formatRupiah(item.masuk),
         Keluar: formatRupiah(item.keluar),
-        Saldo: formatRupiah(item.saldo),
+        Saldo: formatRupiah(item.saldoBerjalan || 0),
       };
 
       message += `${idx + 1})\n`;
@@ -1433,7 +1472,7 @@ export default function KasBersihDusun() {
                           </p>
 
                           <p className="text-sm font-medium text-gray-700 mt-1">
-                            {formatRupiah(item.saldo)}
+                            {formatRupiah(item.saldoBerjalan || 0)}
                           </p>
                         </div>
                       </div>
