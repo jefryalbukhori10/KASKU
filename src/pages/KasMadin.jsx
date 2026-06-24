@@ -1470,6 +1470,45 @@ export default function KasMadin() {
         };
       });
 
+      const dataAsc = [...data].sort((a, b) => {
+        const tanggalA = a.tanggal?.getTime() || 0;
+        const tanggalB = b.tanggal?.getTime() || 0;
+
+        if (tanggalA !== tanggalB) {
+          return tanggalA - tanggalB;
+        }
+
+        const tsA = a.timestamp?.seconds || 0;
+        const tsB = b.timestamp?.seconds || 0;
+
+        return tsA - tsB;
+      });
+
+      let saldoBerjalan = 0;
+
+      const dataWithSaldo = dataAsc.map((item) => {
+        saldoBerjalan += Number(item.masuk || 0) - Number(item.keluar || 0);
+
+        return {
+          ...item,
+          saldoBerjalan,
+        };
+      });
+
+      dataWithSaldo.sort((a, b) => {
+        const tanggalA = a.tanggal?.getTime() || 0;
+        const tanggalB = b.tanggal?.getTime() || 0;
+
+        if (tanggalA !== tanggalB) {
+          return tanggalB - tanggalA;
+        }
+
+        const tsA = a.timestamp?.seconds || 0;
+        const tsB = b.timestamp?.seconds || 0;
+
+        return tsB - tsA;
+      });
+
       const totalSaldo = data.reduce(
         (total, item) =>
           total + Number(item.masuk || 0) - Number(item.keluar || 0),
@@ -1477,7 +1516,7 @@ export default function KasMadin() {
       );
 
       setTotalSaldo(totalSaldo);
-      setKasList(data);
+      setKasList(dataWithSaldo);
     } catch (error) {
       console.error("Gagal mengambil data:", error);
     } finally {
@@ -1599,7 +1638,7 @@ export default function KasMadin() {
           keluar,
         });
 
-        await recalculateSaldo();
+        // await recalculateSaldo();
 
         // Swal.fire("Berhasil", "Data berhasil diperbarui", "success");
         Toast.fire({
@@ -1616,7 +1655,7 @@ export default function KasMadin() {
           timestamp: Timestamp.now(),
         });
 
-        await recalculateSaldo();
+        // await recalculateSaldo();
 
         // Swal.fire("Berhasil", "Data berhasil ditambahkan", "success");
         Toast.fire({
@@ -1707,7 +1746,7 @@ export default function KasMadin() {
 
       await deleteDoc(doc(db, "kas_madin", id));
 
-      await recalculateSaldo();
+      // await recalculateSaldo();
 
       await fetchKasData();
 
@@ -1778,7 +1817,7 @@ export default function KasMadin() {
         Keterangan: item.keterangan || "-",
         Masuk: formatRupiah(item.masuk),
         Keluar: formatRupiah(item.keluar),
-        Saldo: formatRupiah(item.saldo),
+        Saldo: formatRupiah(item.saldoBerjalan || 0),
       };
 
       message += `${idx + 1})\n`;
@@ -2026,7 +2065,9 @@ export default function KasMadin() {
               Kas Madin
             </h1>
 
-            <p className="text-sm text-gray-500 mt-0.5">Keuangan Madin</p>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Keuangan Organisasi Madin
+            </p>
           </div>
 
           <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-black/5 flex items-center justify-center">
@@ -2380,7 +2421,7 @@ export default function KasMadin() {
                           </p>
 
                           <p className="text-sm font-medium text-gray-700 mt-1">
-                            {formatRupiah(item.saldo)}
+                            {formatRupiah(item.saldoBerjalan || 0)}
                           </p>
                         </div>
                       </div>
@@ -2398,7 +2439,7 @@ export default function KasMadin() {
                       </p>
 
                       {user &&
-                        (user.email === "admin@bersihdusun.com" ||
+                        (user.email === "admin@madin.com" ||
                           user.email === "jefryalbukhori23@gmail.com") && (
                           <div className="flex items-center gap-2 justify-end mt-4">
                             <button
@@ -2450,7 +2491,7 @@ export default function KasMadin() {
 
       {/* ================= FLOATING BUTTON ================= */}
       {user &&
-        (user.email === "admin@bersihdusun.com" ||
+        (user.email === "admin@madin.com" ||
           user.email === "jefryalbukhori23@gmail.com") && (
           <motion.button
             whileTap={{ scale: 0.92 }}
