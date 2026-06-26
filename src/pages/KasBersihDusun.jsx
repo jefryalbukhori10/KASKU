@@ -415,7 +415,30 @@ export default function KasBersihDusun() {
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
 
-    const data = filteredData;
+    const data = [...filteredData].sort((a, b) => {
+      const tanggalA = a.tanggal?.getTime() || 0;
+      const tanggalB = b.tanggal?.getTime() || 0;
+
+      if (tanggalA !== tanggalB) {
+        return tanggalA - tanggalB;
+      }
+
+      const tsA = a.timestamp?.seconds || 0;
+      const tsB = b.timestamp?.seconds || 0;
+
+      return tsA - tsB;
+    });
+
+    let saldoBerjalan = 0;
+
+    const dataPDF = data.map((item) => {
+      saldoBerjalan += Number(item.masuk || 0) - Number(item.keluar || 0);
+
+      return {
+        ...item,
+        saldoBerjalan,
+      };
+    });
 
     const pemasukan = data.reduce(
       (sum, item) => sum + Number(item.masuk || 0),
@@ -445,12 +468,15 @@ export default function KasBersihDusun() {
 
     autoTable(doc, {
       startY: 35,
-      head: [["Tanggal", "Keterangan", "Masuk", "Keluar"]],
-      body: data.map((item) => [
+
+      head: [["Tanggal", "Keterangan", "Masuk", "Keluar", "Saldo"]],
+
+      body: dataPDF.map((item) => [
         item.tanggal?.toLocaleDateString("id-ID"),
         item.keterangan,
         item.masuk ? formatRupiah(item.masuk) : "-",
         item.keluar ? formatRupiah(item.keluar) : "-",
+        formatRupiah(item.saldoBerjalan),
       ]),
     });
 
