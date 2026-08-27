@@ -73,6 +73,17 @@ export default function Home() {
         (user.email === "admin@bersihdusun.com" ||
           user.email === "jefryalbukhori23@gmail.com"),
     },
+
+    {
+      title: "Kas Pemuda Pemudi RW 09",
+      desc: "Laporan keuangan Kas Pemuda Pemudi RW 09",
+      link: "/kas-pemuda",
+      color: "from-purple-500 to-pink-500",
+      allowed:
+        user &&
+        (user.email === "admin@pemuda.com" ||
+          user.email === "jefryalbukhori23@gmail.com"),
+    },
   ];
 
   return (

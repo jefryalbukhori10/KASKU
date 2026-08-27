@@ -144,11 +144,11 @@ export default function Login() {
                 </div>
 
                 <h1 className="text-3xl font-bold text-[#111827] mt-5">
-                  Kas Bersih Dusun
+                  Kas LAPORAN KAS ORGANISASI
                 </h1>
 
                 <p className="text-gray-500 mt-2 text-sm">
-                  Sistem Informasi Keuangan Dusun
+                  Sistem Informasi Keuangan organisai
                 </p>
               </div>
               <div className="mb-6 text-center">
@@ -228,7 +228,7 @@ transition
                 </button>
               </form>
               <div className="text-center text-gray-500 text-sm mt-4">
-                © {new Date().getFullYear()} Kas Bersih Dusun
+                © {new Date().getFullYear()} LAPORAN KAS ORGANISASI
                 <div className="mt-1 text-xs text-gray-400">Versi 1.0</div>
               </div>
             </div>

@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import KasUpzis from "./pages/KasUpzis";
 import KasBal from "./pages/KasBal";
 import KasBersihDusun from "./pages/KasBersihDusun";
+import KasPemuda from "./pages/KasPemuda";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/kas-banjari" element={<KasBanjari />} />
           <Route path="/kas-upzis" element={<KasUpzis />} />
           <Route path="/kas-bal" element={<KasBal />} />
+          <Route path="/kas-pemuda" element={<KasPemuda />} />
           <Route path="/kas-bersih-dusun" element={<KasBersihDusun />} />
           <Route path="/login" element={<Login />} />
         </Route>
